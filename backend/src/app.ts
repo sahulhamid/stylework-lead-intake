@@ -1,7 +1,9 @@
 import express, { type Express } from "express";
 import helmet from "helmet";
 import { prisma } from "./lib/prisma";
+import { errorHandler } from "./middleware/error-handler";
 import { httpLogger } from "./middleware/http-logger";
+import { notFound } from "./middleware/not-found";
 import { requestId } from "./middleware/request-id";
 
 // Builds the app without listening, so tests can drive it with Supertest.
@@ -22,6 +24,10 @@ export function createApp(): Express {
       res.status(503).json({ status: "error", db: "down", uptime: process.uptime() });
     }
   });
+
+  // Must stay last: 404 for unmatched routes, then the central error handler.
+  app.use(notFound);
+  app.use(errorHandler);
 
   return app;
 }
