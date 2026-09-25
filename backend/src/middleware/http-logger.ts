@@ -11,4 +11,14 @@ export const httpLogger = pinoHttp({
     return "info";
   },
   autoLogging: { ignore: (req) => req.url === "/health" },
+  // Log only what's needed to trace a request. Query strings can carry PII
+  // (e.g. ?search=<email>) and headers are noisy, so neither is logged.
+  serializers: {
+    req: (req: { id: unknown; method: string; url: string }) => ({
+      id: req.id,
+      method: req.method,
+      path: req.url.split("?")[0],
+    }),
+    res: (res: { statusCode: number }) => ({ statusCode: res.statusCode }),
+  },
 });
