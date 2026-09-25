@@ -5,6 +5,7 @@ import { errorHandler } from "./middleware/error-handler";
 import { httpLogger } from "./middleware/http-logger";
 import { notFound } from "./middleware/not-found";
 import { requestId } from "./middleware/request-id";
+import { webhookRouter } from "./modules/webhook/webhook.routes";
 
 // Builds the app without listening, so tests can drive it with Supertest.
 export function createApp(): Express {
@@ -13,7 +14,16 @@ export function createApp(): Express {
   app.use(requestId);
   app.use(httpLogger);
   app.use(helmet());
-  app.use(express.json({ limit: "100kb" }));
+  // Keep the exact request bytes: webhook signatures are computed over the raw body,
+  // and re-serializing req.body can change bytes (spacing, key order, unicode escapes).
+  app.use(
+    express.json({
+      limit: "100kb",
+      verify: (req, _res, buf) => {
+        req.rawBody = buf;
+      },
+    }),
+  );
 
   app.get("/health", async (req, res) => {
     try {
@@ -24,6 +34,8 @@ export function createApp(): Express {
       res.status(503).json({ status: "error", db: "down", uptime: process.uptime() });
     }
   });
+
+  app.use("/webhook", webhookRouter);
 
   // Must stay last: 404 for unmatched routes, then the central error handler.
   app.use(notFound);

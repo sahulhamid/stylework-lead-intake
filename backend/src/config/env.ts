@@ -7,6 +7,8 @@ const envSchema = z.object({
     .enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"])
     .default("info"),
   DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
+  META_VERIFY_TOKEN: z.string().min(1),
+  META_APP_SECRET: z.string().min(16),
 });
 
 export type Env = z.infer<typeof envSchema>;
