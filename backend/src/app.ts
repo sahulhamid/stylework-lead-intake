@@ -1,5 +1,6 @@
 import express, { type Express } from "express";
 import helmet from "helmet";
+import { prisma } from "./lib/prisma";
 import { httpLogger } from "./middleware/http-logger";
 import { requestId } from "./middleware/request-id";
 
@@ -12,9 +13,14 @@ export function createApp(): Express {
   app.use(helmet());
   app.use(express.json({ limit: "100kb" }));
 
-  // DB connectivity check is added once Prisma is wired in.
-  app.get("/health", (_req, res) => {
-    res.status(200).json({ status: "ok", uptime: process.uptime() });
+  app.get("/health", async (req, res) => {
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+      res.status(200).json({ status: "ok", db: "up", uptime: process.uptime() });
+    } catch (err) {
+      req.log.error({ err }, "health check failed: database unreachable");
+      res.status(503).json({ status: "error", db: "down", uptime: process.uptime() });
+    }
   });
 
   return app;

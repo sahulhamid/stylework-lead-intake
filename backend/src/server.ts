@@ -1,6 +1,7 @@
 import { createApp } from "./app";
 import { env } from "./config/env";
 import { logger } from "./lib/logger";
+import { prisma } from "./lib/prisma";
 
 const SHUTDOWN_TIMEOUT_MS = 10_000;
 
@@ -24,8 +25,16 @@ function shutdown(signal: NodeJS.Signals): void {
       logger.error({ err }, "error while closing server");
       process.exit(1);
     }
-    logger.info("shutdown complete");
-    process.exit(0);
+    prisma
+      .$disconnect()
+      .then(() => {
+        logger.info("shutdown complete");
+        process.exit(0);
+      })
+      .catch((disconnectErr: unknown) => {
+        logger.error({ err: disconnectErr }, "error while disconnecting database");
+        process.exit(1);
+      });
   });
   server.closeIdleConnections();
 }

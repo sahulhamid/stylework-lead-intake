@@ -5,9 +5,7 @@
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "types": ["node"],
-    "rootDir": "src",
-    "outDir": "dist",
-    "sourceMap": true,
+    "noEmit": true,
 
     "strict": true,
     "noUncheckedIndexedAccess": true,
@@ -18,5 +16,5 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true
   },
-  "include": ["src"]
+  "include": ["src", "prisma.config.ts"]
 }

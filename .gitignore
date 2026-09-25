@@ -22,6 +22,10 @@ npm-debug.log*
 .idea/
 .vscode/
 
+# Generated Prisma client (rebuilt by `prisma generate`)
+backend/src/generated/
+
 # Local AI working files
 CLAUDE.md
 docs/ai-log.md
+notes

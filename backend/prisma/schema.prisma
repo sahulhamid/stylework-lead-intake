@@ -1,0 +1,66 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  CONVERTED
+  LOST
+}
+
+enum ActivityType {
+  LEAD_CREATED
+  LEAD_UPDATED
+  STATUS_CHANGED
+}
+
+model Lead {
+  id            String     @id @default(uuid(7)) @db.Uuid
+  metaLeadId    String     @unique @map("meta_lead_id")
+  formId        String?    @map("form_id")
+  adId          String?    @map("ad_id")
+  campaignId    String?    @map("campaign_id")
+  pageId        String?    @map("page_id")
+  metaCreatedAt DateTime?  @map("meta_created_at") @db.Timestamptz(3)
+  fullName      String?    @map("full_name")
+  email         String?
+  phone         String?
+  city          String?
+  customFields  Json       @default("{}") @map("custom_fields")
+  rawPayload    Json       @map("raw_payload")
+  status        LeadStatus @default(NEW)
+  version       Int        @default(1)
+  createdAt     DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  activities LeadActivity[]
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("leads")
+}
+
+model LeadActivity {
+  id         String       @id @default(uuid(7)) @db.Uuid
+  leadId     String       @map("lead_id") @db.Uuid
+  type       ActivityType
+  actor      String
+  fromStatus LeadStatus?  @map("from_status")
+  toStatus   LeadStatus?  @map("to_status")
+  changes    Json?
+  note       String?
+  createdAt  DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Restrict)
+
+  @@index([leadId, createdAt])
+  @@map("lead_activities")
+}
