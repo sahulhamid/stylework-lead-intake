@@ -29,4 +29,18 @@ export const listLeadsQuerySchema = z.object({
 // :id must be a UUID, otherwise Postgres rejects the query and it would surface as a 500.
 export const leadIdParamsSchema = z.object({ id: z.uuid() });
 
+// Body of PATCH /leads/:id/status. version is the lead version the client last saw: if the
+// lead changed since (another user, a webhook update), the update is rejected with 409.
+export const updateStatusBodySchema = z.object({
+  status: z.enum(LeadStatus),
+  note: z
+    .string()
+    .trim()
+    .max(500)
+    .optional()
+    .transform((value) => value || undefined),
+  version: z.number().int().positive(),
+});
+
 export type ListLeadsQuery = z.output<typeof listLeadsQuerySchema>;
+export type UpdateStatusBody = z.output<typeof updateStatusBodySchema>;

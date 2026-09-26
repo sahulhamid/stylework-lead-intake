@@ -1,4 +1,4 @@
-import type { Prisma } from "../../generated/prisma/client";
+import type { LeadStatus, Prisma } from "../../generated/prisma/client";
 import { prisma } from "../../lib/prisma";
 import type { ListLeadsQuery } from "./leads.schemas";
 
@@ -17,6 +17,10 @@ export type LeadInput = {
   customFields: Record<string, string>;
   rawPayload: Prisma.InputJsonValue;
 };
+
+export function findLeadById(id: string) {
+  return prisma.lead.findUnique({ where: { id } });
+}
 
 export function findLeadByMetaId(metaLeadId: string) {
   return prisma.lead.findUnique({ where: { metaLeadId } });
@@ -45,6 +49,32 @@ export function updateLeadWithActivity(
     });
     if (count === 0) return false;
     await tx.leadActivity.create({ data: { leadId: id, type: "LEAD_UPDATED", actor, changes } });
+    return true;
+  });
+}
+
+export type StatusChange = {
+  leadId: string;
+  expectedVersion: number;
+  from: LeadStatus;
+  to: LeadStatus;
+  note: string | undefined;
+  actor: string;
+};
+
+// Changes the status only if the lead is still at expectedVersion (optimistic lock) and
+// records STATUS_CHANGED in the same transaction. Returns false if the version is stale.
+export function updateStatusWithActivity(change: StatusChange): Promise<boolean> {
+  const { leadId, expectedVersion, from, to, note, actor } = change;
+  return prisma.$transaction(async (tx) => {
+    const { count } = await tx.lead.updateMany({
+      where: { id: leadId, version: expectedVersion },
+      data: { status: to, version: { increment: 1 } },
+    });
+    if (count === 0) return false;
+    await tx.leadActivity.create({
+      data: { leadId, type: "STATUS_CHANGED", actor, fromStatus: from, toStatus: to, note },
+    });
     return true;
   });
 }
