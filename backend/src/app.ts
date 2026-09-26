@@ -1,5 +1,7 @@
+import cors from "cors";
 import express, { type Express } from "express";
 import helmet from "helmet";
+import { env } from "./config/env";
 import { prisma } from "./lib/prisma";
 import { errorHandler } from "./middleware/error-handler";
 import { httpLogger } from "./middleware/http-logger";
@@ -37,7 +39,8 @@ export function createApp(): Express {
   });
 
   app.use("/webhook", webhookRouter);
-  app.use("/leads", leadsRouter);
+  // Only the dashboard's browser calls /leads. The webhook is server to server, so no CORS there.
+  app.use("/leads", cors({ origin: env.CORS_ORIGINS }), leadsRouter);
 
   // Must stay last: 404 for unmatched routes, then the central error handler.
   app.use(notFound);

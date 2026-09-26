@@ -9,6 +9,18 @@ const envSchema = z.object({
   DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
   META_VERIFY_TOKEN: z.string().min(1),
   META_APP_SECRET: z.string().min(16),
+  // Browser origins allowed to call the API (the dashboard), comma-separated.
+  CORS_ORIGINS: z
+    .string()
+    .default("http://localhost:5173")
+    .transform((value) => value.split(",").map((origin) => origin.trim()))
+    .pipe(
+      z.array(
+        z.url().refine((url) => new URL(url).origin === url, {
+          message: "must be an origin like https://app.example.com (no path or trailing slash)",
+        }),
+      ),
+    ),
 });
 
 export type Env = z.infer<typeof envSchema>;
