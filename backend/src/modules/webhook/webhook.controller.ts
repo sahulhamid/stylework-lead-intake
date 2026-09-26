@@ -41,7 +41,13 @@ export const receiveLead: RequestHandler = async (req, res) => {
         continue;
       }
 
-      const result = await ingestLead(parsed.data, change.value, leadDataProvider);
+      const result = await ingestLead(parsed.data, change.value, leadDataProvider).catch(
+        (err: unknown) => {
+          // Name the lead; the error handler logs the error itself and Meta retries the batch.
+          req.log.warn({ metaLeadId: parsed.data.leadgen_id }, "lead ingestion failed");
+          throw err;
+        },
+      );
       summary[result] += 1;
       req.log.info({ metaLeadId: parsed.data.leadgen_id, result }, "lead ingested");
     }

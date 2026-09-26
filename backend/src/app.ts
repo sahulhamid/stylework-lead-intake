@@ -5,6 +5,7 @@ import { errorHandler } from "./middleware/error-handler";
 import { httpLogger } from "./middleware/http-logger";
 import { notFound } from "./middleware/not-found";
 import { requestId } from "./middleware/request-id";
+import { leadsRouter } from "./modules/leads/leads.routes";
 import { webhookRouter } from "./modules/webhook/webhook.routes";
 
 // Builds the app without listening, so tests can drive it with Supertest.
@@ -36,6 +37,7 @@ export function createApp(): Express {
   });
 
   app.use("/webhook", webhookRouter);
+  app.use("/leads", leadsRouter);
 
   // Must stay last: 404 for unmatched routes, then the central error handler.
   app.use(notFound);

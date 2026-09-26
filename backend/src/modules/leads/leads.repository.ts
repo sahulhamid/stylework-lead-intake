@@ -1,5 +1,6 @@
 import type { Prisma } from "../../generated/prisma/client";
 import { prisma } from "../../lib/prisma";
+import type { ListLeadsQuery } from "./leads.schemas";
 
 // Lead columns written by ingestion (everything except id, status, version, timestamps).
 export type LeadInput = {
@@ -45,5 +46,52 @@ export function updateLeadWithActivity(
     if (count === 0) return false;
     await tx.leadActivity.create({ data: { leadId: id, type: "LEAD_UPDATED", actor, changes } });
     return true;
+  });
+}
+
+// Filters for the lead list. Search matches name, email or phone, case-insensitively.
+function listWhere({ status, search }: ListLeadsQuery): Prisma.LeadWhereInput {
+  return {
+    ...(status && { status }),
+    ...(search && {
+      OR: [
+        { fullName: { contains: search, mode: "insensitive" } },
+        { email: { contains: search, mode: "insensitive" } },
+        { phone: { contains: search } },
+      ],
+    }),
+  };
+}
+
+// "-createdAt" → [{ createdAt: "desc" }, { id: "desc" }]. id breaks ties so pages never
+// overlap or skip rows when many leads share a timestamp or name.
+function listOrderBy(sort: ListLeadsQuery["sort"]): Prisma.LeadOrderByWithRelationInput[] {
+  const direction = sort.startsWith("-") ? "desc" : "asc";
+  const field = sort.startsWith("-") ? sort.slice(1) : sort;
+  return [{ [field]: direction }, { id: direction }];
+}
+
+// One page of leads plus the total matching count (for pagination). rawPayload is left
+// out: the list never shows it and it is the heaviest column.
+export async function findLeads(query: ListLeadsQuery) {
+  const where = listWhere(query);
+  const [leads, total] = await Promise.all([
+    prisma.lead.findMany({
+      where,
+      orderBy: listOrderBy(query.sort),
+      skip: (query.page - 1) * query.limit,
+      take: query.limit,
+      omit: { rawPayload: true },
+    }),
+    prisma.lead.count({ where }),
+  ]);
+  return { leads, total };
+}
+
+// A lead with its audit timeline, newest first.
+export function findLeadWithActivities(id: string) {
+  return prisma.lead.findUnique({
+    where: { id },
+    include: { activities: { orderBy: [{ createdAt: "desc" }, { id: "desc" }] } },
   });
 }

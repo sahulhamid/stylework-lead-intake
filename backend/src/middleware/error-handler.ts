@@ -30,6 +30,8 @@ export const errorHandler: ErrorRequestHandler = (err: unknown, req, res, next) 
   }
 
   if (err instanceof AppError) {
+    // Expected client errors: warn with the reason so a rejected request is explainable.
+    req.log.warn({ code: err.code }, err.message);
     const body: ErrorBody = { error: { code: err.code, message: err.message } };
     if (err.details !== undefined) body.error.details = err.details;
     res.status(err.statusCode).json(body);
