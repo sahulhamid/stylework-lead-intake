@@ -16,5 +16,5 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true
   },
-  "include": ["src", "tests", "prisma.config.ts", "vitest.config.mts"]
+  "include": ["src", "scripts", "tests", "prisma.config.ts", "vitest.config.mts"]
 }

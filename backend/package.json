@@ -14,7 +14,8 @@
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "webhook:send": "tsx --env-file-if-exists=.env scripts/send-test-lead.ts"
   },
   "keywords": [],
   "author": "",
