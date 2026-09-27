@@ -6,7 +6,7 @@ import { Pagination } from "../components/Pagination";
 import { useLeads } from "../hooks/leads";
 import { STATUS_LABELS } from "../lib/format";
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 15;
 const SEARCH_DELAY_MS = 300;
 
 const SORT_OPTIONS: { value: LeadSort; label: string }[] = [
@@ -86,6 +86,7 @@ export function LeadListPage() {
 
   return (
     <main className="mx-auto max-w-6xl space-y-4 p-6">
+      <title>Leads · Lead Intake</title>
       <header>
         <h1 className="text-2xl font-semibold text-slate-900">Leads</h1>
         <p className="text-sm text-slate-500">Captured from Meta Lead Ads</p>
