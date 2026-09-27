@@ -18,5 +18,32 @@ services:
       retries: 10
     restart: unless-stopped
 
+  api:
+    build: ./backend
+    container_name: lead-intake-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-leads}:${POSTGRES_PASSWORD:-leads}@postgres:5432/${POSTGRES_DB:-leads}
+      META_VERIFY_TOKEN: ${META_VERIFY_TOKEN:-local-verify-token}
+      META_APP_SECRET: ${META_APP_SECRET:-local-dev-app-secret-change-me}
+      CORS_ORIGINS: http://localhost:8080
+    ports:
+      - "4000:4000"
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: http://localhost:4000
+    container_name: lead-intake-web
+    depends_on:
+      - api
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+
 volumes:
   postgres-data:
